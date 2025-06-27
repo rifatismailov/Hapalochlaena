@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="e56f27de-bd60-4167-b058-3c295d7884bf" name="Remote Server">
+        <fileTransfer rootFolder="/home/atlas/IdeaProjects" accessType="SFTP" host="192.168.88.200" port="22" sshConfigId="3e343364-0ff7-4e52-81b8-28fc9ac2f494" sshConfig="atlas@192.168.88.200:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" isUseRsync="true" isUseSudo="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
