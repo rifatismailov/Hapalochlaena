@@ -36,10 +36,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/data/documents/
-/templates/model/
+
 /models/
 /data/
-*.pt
-/models/paraphrase-multilingual-MiniLM-L12-v2/
-models/
+/templates/
