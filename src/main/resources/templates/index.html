@@ -1,87 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Upload File</title>
-    <link rel="stylesheet" href="/style.css">
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Custom fonts for this template-->
+    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin-2.min.css" rel="stylesheet">
+
 </head>
-<body>
-<div class="container">
-    <div class="card">
-        <h3>Upload Files</h3>
-        <form id="uploadForm" enctype="multipart/form-data" class="drop_box">
-            <header><h4>Select File</h4></header>
-            <p>Files Supported: DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT</p>
-            <input type="file" name="file" id="fileInput" required accept=".doc,.docx,.xls,. xlsx,.ppt,.pptx,.txt">
-            <button class="btn" type="submit">Upload</button>
-        </form>
-        <div id="result" style="margin-top: 20px; text-align: center; font-weight: bold;"></div>
+
+<body id="page-top">
+
+<!-- Page Wrapper -->
+<div id="wrapper">
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+        <!-- Main Content -->
+        <div id="content">
+
+            <!-- Topbar -->
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+
+                <!-- Sidebar Toggle (Topbar) -->
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                    <i class="fa fa-bars"></i>
+                </button>
+
+                <!-- Topbar Navbar -->
+                <ul class="navbar-nav ml-auto">
+
+                    <div class="topbar-divider d-none d-sm-block"></div>
+
+                    <!-- Nav Item - User Information -->
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <img class="img-profile rounded-circle" style="width: 90px; height: 90px;"
+                                 src="img/hapalochlaena.svg">
+
+                        </a>
+                        <!-- Dropdown - User Information -->
+                    </li>
+
+                </ul>
+
+            </nav>
+            <!-- End of Topbar -->
+
+            <!-- Begin Page Content -->
+            <div class="container-fluid">
+
+                <!-- Page Heading -->
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+                    <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
+                            class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
+                </div>
+
+                <!-- Content Row -->
+                <div class="row">
+
+                    <!-- Earnings (Monthly) Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            The number of verified documents
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="verified-docs">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Earnings (Monthly) Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Number of templates
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="templates">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Earnings (Monthly) Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Number of
+                                            requests to the server
+                                        </div>
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col-auto">
+                                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800" id="requests">
+                                                    0
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Requests Card Example -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                            Number of errors
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="errors">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Row -->
+
+                <div class="row">
+
+                    <!-- Area Chart -->
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="card shadow mb-4">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Earnings Overview</h6>
+
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                                <div class="chart-area">
+                                    <canvas id="myAreaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pie Chart -->
+                    <div class="col-xl-4 col-lg-5">
+                        <div class="card shadow mb-4">
+                            <!-- Card Header - Dropdown -->
+                            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
+                            </div>
+                            <!-- Card Body -->
+                            <div class="card-body">
+                                <div class="chart-pie pt-4 pb-2">
+                                    <canvas id="myPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Row -->
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <!-- Illustrations -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Description of the project</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center">
+                                    <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;"
+                                         src="img/hapalochlaena.svg" alt="...">
+                                </div>
+                                <p><strong>Hapalochlaena</strong> — це система для <strong>виявлення критичної
+                                    інформації</strong> у текстових документах.
+                                    Вона аналізує текст на основі <em>семантичної схожості</em> з заздалегідь
+                                    визначеними шаблонами (темплейтами),
+                                    що описують ознаки критичності.</p>
+
+                                <p><strong>Суть роботи полягає в наступному:</strong></p>
+
+                                <ul>
+                                    <li><strong>Шаблони</strong> мають ключові поля (наприклад, <em>мета</em>, <em>підстава</em>,
+                                        <em>наказ</em>), кожне з яких перетворюється в <em>ембеддінг-вектори</em>.
+                                    </li>
+                                    <li><strong>Отриманий документ</strong> розбивається на рядки, і для кожного рядка
+                                        генеруються <em>вектори значення</em>.
+                                    </li>
+                                    <li><strong>Система</strong> порівнює вектори документа з шаблонами й обчислює
+                                        <em>cosine similarity</em>.
+                                    </li>
+                                    <li>Якщо <strong>схожість</strong> перевищує поріг, система визначає, що текст
+                                        містить <strong>потенційно критичну інформацію</strong>.
+                                    </li>
+                                </ul>
+
+                                <p>Дані можуть надходити з різних джерел (<em>локальні файли, API, веб</em> тощо), що
+                                    дозволяє системі діяти як <strong>“щупальця”</strong> — гнучко охоплювати всі
+                                    можливі канали.</p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <!-- Approach -->
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>
+                            </div>
+                            <div class="card-body">
+                                <p>SB Admin 2 makes extensive use of Bootstrap 4 utility classes in order to reduce
+                                    CSS bloat and poor page performance. Custom CSS classes are used to create
+                                    custom components and custom utility classes.</p>
+                                <p class="mb-0">Before working with this theme, you should become familiar with the
+                                    Bootstrap framework, especially the utility classes.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+            <!-- /.container-fluid -->
+
+        </div>
+        <!-- End of Main Content -->
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <span>Copyright &copy; Your Website 2021</span>
+                </div>
+            </div>
+        </footer>
+        <!-- End of Footer -->
+
     </div>
+    <!-- End of Content Wrapper -->
+
 </div>
+<!-- End of Page Wrapper -->
 
-<!-- ✅ Підключення SockJS і STOMP -->
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<!-- Page level plugins -->
+<script src="vendor/chart.js/Chart.min.js"></script>
 
-<script>
-    let stompClient = null;
-    const clientId = "client-" + Date.now(); // 🔥 унікальний лише один раз
-
-    function connectWebSocket() {
-        const socket = new SockJS('/ws?clientId=' + clientId);
-        stompClient = Stomp.over(socket);
-
-        stompClient.connect({}, () => {
-            console.log("✅ WebSocket зʼєднання встановлено");
-
-            // Підписка на статус
-            stompClient.subscribe('/user/queue/status', (message) => {
-                const statusText = message.body;
-                const statusDiv = document.getElementById("result");
-                console.log("📨 Статус:", statusText);
-                statusDiv.innerText = "🟡 Статус: " + statusText;
-            });
-
-            // Підписка на результат
-            stompClient.subscribe('/user/queue/result', (message) => {
-                const resultText = message.body;
-                const resultDiv = document.getElementById("result");
-                console.log("📨 Результат:", resultText);
-
-                resultDiv.innerHTML = `
-                    📄 ✅ Оброблено: ${resultText}<br><br>
-                    <form action="/result" method="get">
-                        <input type="hidden" name="key" value="${resultText}">
-                        <button class="btn" type="submit">Подивитися результат</button>
-                    </form>
-                `;
-            });
-        }, (error) => {
-            console.error("❌ WebSocket помилка:", error);
-        });
-    }
-
-    window.onload = connectWebSocket;
-
-    document.getElementById('uploadForm').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const fileInput = document.getElementById('fileInput');
-        const formData = new FormData();
-        formData.append("file", fileInput.files[0]);
-
-        fetch("/upload?clientId=" + clientId, {
-            method: "POST",
-            body: formData
-        })
-            .then(res => res.text())
-            .then(msg => {
-                document.getElementById("result").innerText = "📤 Завантажено: " + msg;
-            })
-            .catch(err => {
-                document.getElementById("result").innerText = "❌ Помилка: " + err;
-            });
-    });
-</script>
+<!-- Page level custom scripts -->
+<script src="js/demo/datatables-demo.js"></script>
+<script src="js/demo/chart-area-demo.js"></script>
+<script src="js/demo/chart-pie-demo.js"></script>
 
 </body>
+
 </html>

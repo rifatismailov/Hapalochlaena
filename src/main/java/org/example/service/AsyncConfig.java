@@ -13,12 +13,10 @@ public class AsyncConfig {
     public ThreadPoolTaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(8);
-        executor.setQueueCapacity(50);
+        executor.setMaxPoolSize(4);              // максимум == core
         executor.setThreadNamePrefix("async-doc-");
         executor.initialize();
         return executor;
     }
-
 }
 

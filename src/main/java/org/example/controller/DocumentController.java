@@ -1,6 +1,6 @@
 package org.example.controller;
 
-import org.example.ErrorResponse;
+import org.example.untils.Response;
 import org.example.analysis.DocumentAnalysisLauncher;
 import org.example.untils.DocRequest;
 
@@ -35,15 +35,15 @@ public class DocumentController {
     public ResponseEntity<?> matchAsync(@RequestBody DocRequest docRequest) {
         try {
             // Викликаємо метод matchSync з сервісу
-            ErrorResponse errorResponse = documentAnalysisLauncher.addTaskAsync(docRequest);
-            if (errorResponse != null) {
+            Response response = documentAnalysisLauncher.addTaskAsync(docRequest);
+            if (response != null) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("Document processing has begun, the result will be sent later.");
             } else {
                 return ResponseEntity.status(500)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(errorResponse.getJson());
+                        .body(response.getJson());
             }
         } catch (Exception e) {
             logger.error("❌ Помилка всередині matchAsync: {}", e.getMessage(), e);

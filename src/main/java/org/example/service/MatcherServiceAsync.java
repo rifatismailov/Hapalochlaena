@@ -1,15 +1,14 @@
 package org.example.service;
 
-import ai.djl.inference.Predictor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.example.Message;
 import org.example.kafka.KafkaProducerService;
-import org.example.loader.ModelLoader;
 import org.example.redis.RedisService;
 import org.example.service.match.MatchMeta;
 import org.example.service.match.MatchResult;
+import org.example.untils.CachedTemplate;
+import org.example.untils.Message;
 import org.example.untils.TextSimilarityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,55 +17,123 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+
+/**
+ * MatcherServiceAsync — асинхронний сервіс для семантичного порівняння документів з шаблонами.
+ * Основні задачі:
+ * - Завантаження шаблонів із кешу
+ * - Обчислення embedding-векторів для кожного рядка документа
+ * - Пошук найкращого шаблону за cosine similarity
+ * - Збереження результатів у Redis
+ * - Надсилання повідомлення клієнту через Kafka
+ */
 @Service
 public class MatcherServiceAsync {
+
+    /**
+     * Логер для запису повідомлень про помилки та статусу виконання
+     */
     private static final Logger logger = LoggerFactory.getLogger(MatcherServiceAsync.class);
+
+    /**
+     * Поріг схожості cosine similarity, при якому фрагмент вважається релевантним
+     */
     private static final double SIMILARITY_THRESHOLD = 0.75;
-    private final ModelLoader modelLoader;
+
+    /**
+     * Сервіс для збереження та отримання даних з Redis
+     */
     private final RedisService redisService;
-    private final TemplateCache templateCache;
+
+    /**
+     * Сервіс для кешування шаблонів (включає embedding та фрагменти)
+     */
+    private final TemplateCacheService templateCacheService;
+
+    /**
+     * Jackson-маршалізатор для роботи з JSON-об'єктами
+     */
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Kafka-продюсер для надсилання результатів клієнту
+     */
     @Autowired
     private KafkaProducerService kafkaProducerService;
 
-    public MatcherServiceAsync(ModelLoader modelLoader, RedisService redisService, TemplateCache templateCache) {
-        this.modelLoader = modelLoader;
+    /**
+     * Зберігає останній відсоток прогресу, щоб уникнути дублювання повідомлень
+     */
+    private int lastSentPercent = -1;
+
+    /**
+     * Конструктор класу, ініціалізує сервіси кешу шаблонів і Redis
+     */
+    public MatcherServiceAsync(TemplateCacheService templateCacheService, RedisService redisService) {
+        this.templateCacheService = templateCacheService;
         this.redisService = redisService;
-        this.templateCache = templateCache;
     }
 
+    /**
+     * Основний метод для пошуку найкращого шаблону до переданого документа.
+     *
+     * @param sender ідентифікатор відправника (напр. client1 або insider)
+     * @param doc назва або ідентифікатор документа
+     * @param lines список рядків тексту документа
+     */
     public void matchDocument(String sender, String doc, List<String> lines) {
         try {
-            Predictor<String, float[]> predictor = modelLoader.newPredictor();
+            /**
+             * Поточний найвищий бал подібності серед усіх шаблонів
+             */
             double highestScore = -1;
+
+            /**
+             * Назва шаблону з найвищим балом відповідності
+             */
             String bestTemplateName = null;
+
+            /**
+             * Карта знайдених відповідностей: ключ — назва поля, значення — рядок із документа
+             */
             Map<String, String> bestResult = null;
-            Map<String, String> bestJsonModel = null;
+
+            /**
+             * JSON-модель шаблону з усіма фрагментами (ключ — поле, значення — список прикладів)
+             */
+            Map<String, List<String>> bestJsonModel = null;
+
+            /**
+             * Всі знайдені MatchResult для кожного шаблону
+             */
             Map<String, List<MatchResult>> bestJsonMatchResult = new HashMap<>();
+
+            /**
+             * Статистика по кожному шаблону (назва, загальний бал, кількість збігів)
+             */
             List<MatchMeta> matchStats = new ArrayList<>();
 
-            Map<String, Map<String, String>> allTemplates = templateCache.getTemplates();
+            /**
+             * Усі доступні шаблони, завантажені з кешу
+             */
+            Map<String, CachedTemplate> allTemplates = templateCacheService.getTemplates();
+
+            /**
+             * Загальна кількість шаблонів для аналізу
+             */
             int totalTemplates = allTemplates.size();
+
+            /**
+             * Лічильник оброблених шаблонів (для оновлення прогресу)
+             */
             int processedTemplates = 0;
 
-            for (Map.Entry<String, Map<String, String>> entry : allTemplates.entrySet()) {
+            for (Map.Entry<String, CachedTemplate> entry : allTemplates.entrySet()) {
                 String fileName = entry.getKey();
-                Map<String, String> jsonModel = entry.getValue();
+                CachedTemplate cachedTemplate = entry.getValue();
 
-                Map<String, List<String>> templateFragments = new HashMap<>();
-                Map<String, List<float[]>> templateEmbeddings = new HashMap<>();
-
-                for (var e : jsonModel.entrySet()) {
-                    List<String> fragments = List.of(e.getValue().split("[.!?\\n]"));
-                    List<float[]> embeddings = new ArrayList<>();
-                    for (String frag : fragments) {
-                        frag = frag.trim();
-                        if (!frag.isEmpty()) embeddings.add(predictor.predict(frag));
-                    }
-                    templateFragments.put(e.getKey(), fragments);
-                    templateEmbeddings.put(e.getKey(), embeddings);
-                }
+                Map<String, List<String>> templateFragments = cachedTemplate.getFragments();
+                Map<String, List<float[]>> templateEmbeddings = cachedTemplate.getEmbeddings();
 
                 Map<String, String> result = new LinkedHashMap<>();
                 double totalScore = 0.0;
@@ -75,7 +142,8 @@ public class MatcherServiceAsync {
                 for (String line : lines) {
                     String cleaned = line.replaceAll("\\s+", " ").trim();
                     if (cleaned.isBlank()) continue;
-                    float[] lineEmb = predictor.predict(cleaned);
+
+                    float[] lineEmb = templateCacheService.getPredictor().predict(cleaned);
 
                     String bestKey = null;
                     String bestFragment = null;
@@ -113,11 +181,10 @@ public class MatcherServiceAsync {
                     highestScore = totalScore;
                     bestResult = result;
                     bestTemplateName = fileName;
-                    bestJsonModel = jsonModel;
+                    bestJsonModel = cachedTemplate.getFragments();
                     matchStats.add(new MatchMeta(bestTemplateName, totalScore, result.size()));
                     bestJsonMatchResult.put(bestTemplateName, currentMatchResults);
                 }
-
             }
 
             ObjectNode wrapper = buildFinalJson(bestResult, bestJsonModel, doc, bestTemplateName);
@@ -129,58 +196,67 @@ public class MatcherServiceAsync {
             redisService.saveData(doc, wrapper.toString());
 
             if (!"insider".equals(sender)) {
-                //messagingTemplate.convertAndSendToUser(sender, "/queue/result", doc);
-                kafkaProducerService.sendMessage("after-analysis", new Message(sender,"/queue/result",doc).getJson());
+                kafkaProducerService.sendMessage("after-analysis", new Message(sender, "/queue/result", doc).getJson());
             }
 
         } catch (Exception e) {
-            logger.error("❌ Помилка аналізу документа '{}': {}", doc, e.getMessage(), e);
+            logger.error("\uD83D\uDEA8 Помилка аналізу документа '{}': {}", doc, e.getMessage(), e);
         }
     }
 
-    private int lastSentPercent = -1;
-
+    /**
+     * Надсилає прогрес обробки шаблонів через Kafka
+     * @param processedTemplates кількість оброблених шаблонів
+     * @param totalTemplates загальна кількість шаблонів
+     * @param sender ідентифікатор відправника
+     */
     private void sendProgress(int processedTemplates, int totalTemplates, String sender) {
         int progressPercent = (int) ((processedTemplates / (double) totalTemplates) * 100);
         if (progressPercent != lastSentPercent) {
-            //messagingTemplate.convertAndSendToUser(sender, "/queue/status", progressPercent + "%");
-            kafkaProducerService.sendMessage("after-analysis", new Message(sender,"/queue/status",progressPercent + "%").getJson());
-
+            kafkaProducerService.sendMessage("after-analysis",
+                    new Message(sender, "/queue/status", progressPercent + "%").getJson());
             lastSentPercent = progressPercent;
         }
     }
 
-
-    private ObjectNode buildFinalJson(Map<String, String> bestResult, Map<String, String> bestJsonModel,
-                                      String doc, String bestTemplateName) {
+    /**
+     * Створює фінальний JSON-об'єкт з полями документа, що були знайдені, шаблоном і назвою документа
+     *
+     * @param bestResult знайдені відповідності (ключ — поле, значення — рядок з документа)
+     * @param bestJsonModel оригінальна структура шаблону
+     * @param doc назва документа
+     * @param bestTemplateName ім'я найкращого шаблону
+     * @return об'єкт JSON, який буде збережено і передано
+     */
+    private ObjectNode buildFinalJson(Map<String, String> bestResult,
+                                      Map<String, List<String>> bestJsonModel,
+                                      String doc,
+                                      String bestTemplateName) {
         ObjectNode wrapper = mapper.createObjectNode();
-        if (bestResult != null) {
-            ObjectNode document = mapper.createObjectNode();
-            for (var e : bestResult.entrySet()) {
-                document.put(e.getKey(), e.getValue());
-            }
 
-            String expectedTitle = Optional.ofNullable(bestJsonModel)
-                    .map(map -> map.get("title"))
-                    .filter(t -> !t.isBlank())
-                    .orElse("not_title");
-
-            if (!document.has("title") || document.get("title").asText().isBlank()) {
-                for (String e : bestResult.values()) {
-                    if (e.contains(expectedTitle)) {
-                        document.put("title", expectedTitle);
-                        break;
-                    }
-                }
-                if (!document.has("title")) document.put("title", expectedTitle);
-            }
-
-            wrapper.put("doc", doc);
-            wrapper.put("template", bestTemplateName);
-            wrapper.set("document", document);
-        } else {
+        if (bestResult == null || bestResult.isEmpty()) {
             wrapper.put("status", "not found");
+            return wrapper;
         }
+
+        ObjectNode document = mapper.createObjectNode();
+        bestResult.forEach(document::put);
+
+        String expectedTitle = Optional.ofNullable(bestJsonModel)
+                .map(map -> map.get("title"))
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.get(0))
+                .filter(title -> !title.isBlank())
+                .orElse("not_title");
+
+        if (!document.has("title") || document.get("title").asText().isBlank()) {
+            boolean foundInContent = bestResult.values().stream().anyMatch(v -> v.contains(expectedTitle));
+            document.put("title", foundInContent ? expectedTitle : "not_title");
+        }
+
+        wrapper.put("doc", doc);
+        wrapper.put("template", bestTemplateName);
+        wrapper.set("document", document);
         return wrapper;
     }
 }
